@@ -1,8 +1,6 @@
 name: Build Android APK
-
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,25 +21,77 @@ jobs:
           keytool -genkey -v -keystore keystore.jks -alias tasker \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass android -keypass android \
-            -dname "CN=Personal, OU=Personal, O=Personal, L=Unknown, ST=Unknown, C=CN"
+            -dname "CN=Me" -noprompt
 
-      - name: Init Bubblewrap project
+      - name: Create Android project
         run: |
-          npx @bubblewrap/cli@latest init \
-            --manifest "https://luckoxo.github.io/my-warehouse/tasker/manifest.json" \
-            --directory ./twa \
-            --package-id com.luckoxo.tasker
+          mkdir -p app/src/main/java/com/luckoxo/tasker
+          cat > settings.gradle << 'EOF'
+          include ':app'
+          EOF
+          cat > build.gradle << 'EOF'
+          plugins { id 'com.android.application' version '8.2.0' apply false }
+          EOF
+          cat > app/build.gradle << 'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'com.luckoxo.tasker'
+            compileSdk 34
+            defaultConfig {
+              applicationId 'com.luckoxo.tasker'
+              minSdk 21 targetSdk 34 versionCode 1 versionName '1.0'
+            }
+            signingConfigs {
+              release {
+                storeFile file('../keystore.jks')
+                storePassword 'android' keyAlias 'tasker' keyPassword 'android'
+              }
+            }
+            buildTypes {
+              release { signingConfig signingConfigs.release }
+            }
+            compileOptions {
+              sourceCompatibility JavaVersion.VERSION_17
+              targetCompatibility JavaVersion.VERSION_17
+            }
+          }
+          dependencies {
+            implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+          }
+          EOF
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application android:allowBackup="true" android:label="任务提醒"
+              android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+              <activity android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+                android:exported="true">
+                <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                  android:value="https://luckoxo.github.io/my-warehouse/tasker/"/>
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN"/>
+                  <category android:name="android.intent.category.LAUNCHER"/>
+                </intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          EOF
+          echo 'android.useAndroidX=true' > gradle.properties
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
 
       - name: Build APK
         run: |
-          cd twa
-          npx @bubblewrap/cli@latest build
+          gradle wrapper --gradle-version 8.5
+          ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: tasker-apk
-          path: |
-            twa/app/build/outputs/apk/release/*.apk
-            twa/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/release/*.apk
           retention-days: 30

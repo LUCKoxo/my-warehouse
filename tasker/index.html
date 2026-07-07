@@ -816,7 +816,12 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ==================== PWA ====================
-// 使用静态 manifest.webmanifest（PWABuilder 兼容）
+// 使用静态 manifest.json（PWABuilder 兼容）
+
+// Service Worker 注册
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 
 // ==================== STARTUP ====================
 renderContent();

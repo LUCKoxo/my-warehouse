@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="我的仓库">
+<meta name="theme-color" content="#8B3A3A">
+<meta name="description" content="小仓库进出货管理系统">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%238B3A3A'/><text x='90' y='115' font-size='90' text-anchor='middle'>📦</text></svg>">
+<link rel="manifest" id="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuaIkeeahOWTmOW6kyIsCiAgInNob3J0X25hbWUiOiAi5oiR55qE5ZOZ5bqTIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNGNUYwRUIiLAogICJ0aGVtZV9jb2xvciI6ICIjOEIzQTNBIiwKICAiaWNvbnMiOiBbXQp9">
+<title>我的仓库</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  background:#F5F0EB;color:#2C2C2C;display:flex;justify-content:center;
+}
+#app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;position:relative;background:#F5F0EB}
+
+/* ===== Header ===== */
+header{
+  background:linear-gradient(135deg,#8B3A3A,#A0522D);
+  color:#FFF;padding:16px 20px;padding-top:max(16px,env(safe-area-inset-top));
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;
+}
+header h1{font-size:22px;font-weight:700;letter-spacing:1px}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn-reset{
+  background:rgba(255,255,255,.15);color:#FFF;border:1px solid rgba(255,255,255,.3);
+  padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;
+  white-space:nowrap;transition:background .2s;
+}
+.btn-reset:active{background:rgba(255,255,255,.3)}
+
+/* ===== Stats Bar ===== */
+.stats-bar{
+  display:flex;gap:1px;background:#E0D5C9;flex-shrink:0;
+}
+.stats-bar .stat{
+  flex:1;background:#F5F0EB;text-align:center;padding:12px 8px;
+}
+.stat .num{font-size:26px;font-weight:800;color:#8B3A3A;line-height:1.1}
+.stat .label{font-size:11px;color:#8B7E6E;margin-top:2px}
+.stat .num.warn{color:#E67E22}
+
+/* ===== Tabs ===== */
+nav.tabs{
+  display:flex;background:#FFF;border-bottom:1px solid #E8E0D8;flex-shrink:0;
+  position:sticky;top:0;z-index:10;
+}
+nav.tabs button{
+  flex:1;padding:14px 4px;border:none;background:none;font-size:15px;color:#8B7E6E;
+  cursor:pointer;position:relative;font-family:inherit;font-weight:500;
+  transition:color .2s;
+}
+nav.tabs button.active{color:#8B3A3A;font-weight:700}
+nav.tabs button.active::after{
+  content:'';position:absolute;bottom:0;left:20%;right:20%;height:3px;
+  background:#8B3A3A;border-radius:2px 2px 0 0;
+}
+
+/* ===== Main Content ===== */
+main{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch}
+main:empty::after{content:'加载中…';display:block;text-align:center;padding:40px;color:#B8A898}
+
+/* ===== Section Header ===== */
+.section-title{
+  font-size:14px;color:#8B7E6E;padding:8px 4px 6px;font-weight:600;
+  display:flex;align-items:center;gap:6px;
+}
+.section-title .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dot-red{background:#D32F2F}
+.dot-yellow{background:#F9A825}
+.dot-gold{background:#DAA520}
+
+/* ===== Item Card ===== */
+.item-card{
+  background:#FFF;border-radius:12px;padding:14px 16px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+  border-left:4px solid transparent;
+  transition:transform .1s;
+}
+.item-card:active{transform:scale(.99)}
+.item-card.border-red{border-left-color:#D32F2F}
+.item-card.border-yellow{border-left-color:#F9A825}
+.item-card.border-gold{border-left-color:#DAA520}
+.item-card.border-hex{border-left-color:#6D4C41}
+.item-card.border-custom{border-left-color:#7B6B5E}
+.item-info{flex:1;min-width:0}
+.item-info .name{font-size:15px;font-weight:600;line-height:1.3}
+.item-info .spec{font-size:12px;color:#8B7E6E;margin-top:1px;display:flex;align-items:center;gap:4px}
+.item-info .spec .tag{
+  display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;
+  background:#F5F0EB;color:#8B7E6E;
+}
+.stock-num{font-size:28px;font-weight:800;min-width:44px;text-align:center;line-height:1}
+.stock-num.neg{color:#E53935}
+.stock-num.zero{color:#B8A898}
+.item-actions{display:flex;gap:6px;flex-shrink:0}
+.item-actions button{
+  width:40px;height:40px;border-radius:50%;border:none;
+  font-size:20px;font-weight:700;cursor:pointer;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .1s,opacity .2s;
+}
+.item-actions button:active{transform:scale(.9)}
+.btn-in{background:#E8F5E9;color:#388E3C}
+.btn-out{background:#FFEBEE;color:#D32F2F}
+.btn-del{
+  background:none;color:#B8A898;font-size:16px!important;
+  width:32px!important;height:32px!important;margin-left:2px;
+}
+
+/* ===== Custom Item Add ===== */
+.add-custom{
+  display:flex;gap:8px;margin-bottom:12px;
+}
+.add-custom input{
+  flex:1;padding:10px 14px;border:2px dashed #D6C8B8;border-radius:10px;
+  font-size:15px;background:#FFF;font-family:inherit;outline:none;
+  transition:border-color .2s;
+}
+.add-custom input:focus{border-color:#8B3A3A}
+.add-custom button{
+  padding:10px 18px;background:#8B3A3A;color:#FFF;border:none;border-radius:10px;
+  font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;
+}
+.add-custom button:active{opacity:.8}
+
+/* ===== History ===== */
+.date-divider{
+  text-align:center;font-size:12px;color:#B8A898;padding:16px 0 8px;
+}
+.date-divider:first-child{padding-top:4px}
+.history-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:#FFF;border-radius:10px;margin-bottom:6px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.history-item .h-icon{
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:16px;flex-shrink:0;
+}
+.h-icon.in{background:#E8F5E9;color:#388E3C}
+.h-icon.out{background:#FFEBEE;color:#D32F2F}
+.h-info{flex:1;min-width:0}
+.h-info .h-name{font-size:14px;font-weight:600}
+.h-info .h-time{font-size:11px;color:#B8A898;margin-top:1px}
+.h-amount{font-size:18px;font-weight:700}
+.h-amount.in{color:#388E3C}
+.h-amount.out{color:#D32F2F}
+
+/* ===== Empty State ===== */
+.empty{text-align:center;padding:48px 20px;color:#C8B8A8}
+.empty .icon{font-size:48px;margin-bottom:8px}
+.empty p{font-size:14px}
+
+/* ===== Modal ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal-sheet{
+  width:100%;max-width:480px;background:#FFF;border-radius:20px 20px 0 0;
+  padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.modal-overlay.show .modal-sheet{transform:translateY(0)}
+.modal-sheet .m-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:4px}
+.modal-sheet .m-sub{font-size:13px;color:#8B7E6E;text-align:center;margin-bottom:16px}
+.modal-sheet .m-type-badge{
+  display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;
+}
+.badge-in{background:#E8F5E9;color:#388E3C}
+.badge-out{background:#FFEBEE;color:#D32F2F}
+
+.quick-btns{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.quick-btns button{
+  padding:8px 16px;border-radius:20px;border:1px solid #E0D5C9;
+  background:#FFF;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+  color:#5D4E37;transition:all .15s;
+}
+.quick-btns button:active{background:#F5F0EB;border-color:#8B3A3A}
+
+.input-row{display:flex;gap:10px;align-items:center}
+.input-row input{
+  flex:1;padding:14px;border:2px solid #E0D5C9;border-radius:12px;
+  font-size:24px;text-align:center;font-weight:700;font-family:inherit;
+  outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;
+}
+.input-row input:focus{border-color:#8B3A3A}
+.input-row .btn-confirm{
+  padding:14px 24px;border:none;border-radius:12px;font-size:16px;
+  font-weight:700;color:#FFF;cursor:pointer;font-family:inherit;white-space:nowrap;
+  transition:opacity .2s;
+}
+.btn-confirm.in{background:#43A047}
+.btn-confirm.out{background:#E53935}
+.btn-confirm:active{opacity:.8}
+
+.modal-close{
+  display:block;width:100%;padding:12px;margin-top:12px;border:none;background:none;
+  color:#B8A898;font-size:15px;cursor:pointer;font-family:inherit;
+}
+
+/* ===== Toast ===== */
+#toast{
+  position:fixed;top:20px;top:max(20px,env(safe-area-inset-top));left:50%;
+  transform:translateX(-50%) translateY(-120px);
+  background:#333;color:#FFF;padding:10px 20px;border-radius:20px;
+  font-size:14px;z-index:200;pointer-events:none;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  white-space:nowrap;max-width:90vw;text-align:center;
+}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ===== Confirm Dialog ===== */
+.dialog-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.dialog-overlay.show{opacity:1;pointer-events:auto}
+.dialog-box{
+  background:#FFF;border-radius:16px;padding:24px;width:calc(100vw - 60px);max-width:360px;
+  text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.2);
+}
+.dialog-box .d-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.dialog-box .d-msg{font-size:14px;color:#8B7E6E;margin-bottom:20px;line-height:1.5}
+.dialog-box .d-btns{display:flex;gap:10px}
+.dialog-box .d-btns button{
+  flex:1;padding:12px;border-radius:10px;font-size:15px;font-weight:600;
+  cursor:pointer;font-family:inherit;border:none;transition:opacity .2s;
+}
+.d-btn-cancel{background:#F5F0EB;color:#5D4E37}
+.d-btn-danger{background:#E53935;color:#FFF}
+.d-btn-cancel:active,.d-btn-danger:active{opacity:.8}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>📦 我的仓库</h1>
+    <div class="header-right">
+      <button class="btn-reset" onclick="showResetDialog()">🔄 新周期</button>
+    </div>
+  </header>
+  <div class="stats-bar">
+    <div class="stat"><div class="num" id="statTotal">0</div><div class="label">总库存</div></div>
+    <div class="stat"><div class="num" id="statTypes">0</div><div class="label">品类数</div></div>
+    <div class="stat"><div class="num" id="statToday">0</div><div class="label">今日操作</div></div>
+  </div>
+  <nav class="tabs" id="tabNav">
+    <button class="active" data-tab="18">18支香</button>
+    <button data-tab="hex">六角香</button>
+    <button data-tab="custom">沉香</button>
+    <button data-tab="history">记录</button>
+  </nav>
+  <main id="content"></main>
+</div>
+
+<!-- Quantity Input Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-sheet">
+    <div class="m-title" id="modalTitle"></div>
+    <div class="m-sub"><span class="m-type-badge" id="modalBadge"></span></div>
+    <div class="quick-btns">
+      <button onclick="addQuick(1)">+1</button>
+      <button onclick="addQuick(5)">+5</button>
+      <button onclick="addQuick(10)">+10</button>
+    </div>
+    <div class="input-row">
+      <input type="number" inputmode="numeric" min="0" value="0" id="modalInput" onfocus="this.select()">
+      <button class="btn-confirm" id="modalConfirm" onclick="confirmModal()">确认</button>
+    </div>
+    <button class="modal-close" onclick="closeModal()">取消</button>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="dialog-overlay" id="dialog">
+  <div class="dialog-box">
+    <div class="d-title">⚠️ 开始新周期？</div>
+    <div class="d-msg">所有库存数量将清零，操作记录将被清空。<br>此操作不可撤销。</div>
+    <div class="d-btns">
+      <button class="d-btn-cancel" onclick="closeDialog()">取消</button>
+      <button class="d-btn-danger" onclick="confirmReset()">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ==================== DATA ====================
+const STORAGE_KEY = 'warehouse-data';
+
+const PRESET_ITEMS = [
+  // 18支香 — 3色 × 3规格
+  { id:'18-red-60',  category:'18', name:'18支香', color:'红色', spec:'60cm', colorClass:'border-red' },
+  { id:'18-red-50',  category:'18', name:'18支香', color:'红色', spec:'50cm', colorClass:'border-red' },
+  { id:'18-red-40',  category:'18', name:'18支香', color:'红色', spec:'40cm', colorClass:'border-red' },
+  { id:'18-yellow-60',category:'18', name:'18支香', color:'黄色', spec:'60cm', colorClass:'border-yellow' },
+  { id:'18-yellow-50',category:'18', name:'18支香', color:'黄色', spec:'50cm', colorClass:'border-yellow' },
+  { id:'18-yellow-40',category:'18', name:'18支香', color:'黄色', spec:'40cm', colorClass:'border-yellow' },
+  { id:'18-gold-60', category:'18', name:'18支香', color:'金色', spec:'60cm', colorClass:'border-gold' },
+  { id:'18-gold-50', category:'18', name:'18支香', color:'金色', spec:'50cm', colorClass:'border-gold' },
+  { id:'18-gold-40', category:'18', name:'18支香', color:'金色', spec:'40cm', colorClass:'border-gold' },
+  // 六角香 — 2种规格
+  { id:'hex-60', category:'hex', name:'六角香', spec:'60支装', colorClass:'border-hex' },
+  { id:'hex-50', category:'hex', name:'六角香', spec:'50支装', colorClass:'border-hex' },
+];
+
+function getDefaultData() {
+  const stock = {};
+  PRESET_ITEMS.forEach(p => { stock[p.id] = 0; });
+  return {
+    stock,
+    customItems: [],
+    history: [],
+    lastReset: new Date().toISOString()
+  };
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return getDefaultData();
+    const data = JSON.parse(raw);
+    // 确保所有预设物品的库存键存在
+    PRESET_ITEMS.forEach(p => {
+      if (!(p.id in data.stock)) data.stock[p.id] = 0;
+    });
+    if (!data.customItems) data.customItems = [];
+    if (!data.history) data.history = [];
+    return data;
+  } catch (e) {
+    return getDefaultData();
+  }
+}
+
+function saveData(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    toast('⚠️ 存储空间不足，请清理旧数据');
+  }
+}
+
+let APP_DATA = loadData();
+
+// ==================== RENDER ====================
+let currentTab = '18';
+let modalState = null; // { itemId, itemName, type:'in'|'out' }
+
+function getItemInfo(id) {
+  const preset = PRESET_ITEMS.find(p => p.id === id);
+  if (preset) return preset;
+  const custom = APP_DATA.customItems.find(c => c.id === id);
+  if (custom) return { id:custom.id, name:custom.name, spec:'沉香', colorClass:'border-custom', category:'custom' };
+  return null;
+}
+
+function getItemDisplayName(info) {
+  if (!info) return '未知物品';
+  if (info.color && info.spec) return info.name + ' · ' + info.color + ' · ' + info.spec;
+  if (info.spec) return info.name + ' · ' + info.spec;
+  return info.name;
+}
+
+function renderStats() {
+  let total = 0, types = 0;
+  // 预设物品
+  PRESET_ITEMS.forEach(p => {
+    if (APP_DATA.stock[p.id] > 0) types++;
+    total += (APP_DATA.stock[p.id] || 0);
+  });
+  // 自定义物品
+  APP_DATA.customItems.forEach(c => {
+    const qty = APP_DATA.stock[c.id] || 0;
+    if (qty > 0) types++;
+    total += qty;
+  });
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statTotal').className = 'num' + (total < 0 ? ' warn' : '');
+  document.getElementById('statTypes').textContent = types;
+
+  // 今日操作数
+  const today = new Date().toISOString().split('T')[0];
+  const todayCount = APP_DATA.history.filter(h => h.date.startsWith(today)).length;
+  document.getElementById('statToday').textContent = todayCount;
+}
+
+function renderContent() {
+  const main = document.getElementById('content');
+  switch (currentTab) {
+    case '18': main.innerHTML = render18Tab(); break;
+    case 'hex': main.innerHTML = renderHexTab(); break;
+    case 'custom': main.innerHTML = renderCustomTab(); break;
+    case 'history': main.innerHTML = renderHistoryTab(); break;
+  }
+  renderStats();
+}
+
+function render18Tab() {
+  // 按颜色分组
+  const groups = [
+    { color:'红色', dot:'dot-red', items: PRESET_ITEMS.filter(p => p.category==='18' && p.color==='红色') },
+    { color:'黄色', dot:'dot-yellow', items: PRESET_ITEMS.filter(p => p.category==='18' && p.color==='黄色') },
+    { color:'金色', dot:'dot-gold', items: PRESET_ITEMS.filter(p => p.category==='18' && p.color==='金色') },
+  ];
+  return groups.map(g =>
+    `<div class="section-title"><span class="dot ${g.dot}"></span>${g.color}</div>` +
+    g.items.map(p => renderItemCard(p.id, p)).join('')
+  ).join('');
+}
+
+function renderHexTab() {
+  const items = PRESET_ITEMS.filter(p => p.category === 'hex');
+  return items.map(p => renderItemCard(p.id, p)).join('');
+}
+
+function renderCustomTab() {
+  const items = APP_DATA.customItems.map(c =>
+    renderItemCard(c.id, { id:c.id, name:c.name, spec:'沉香', colorClass:'border-custom', category:'custom' }, true)
+  ).join('');
+  const addForm = `
+    <div class="add-custom">
+      <input type="text" id="customNameInput" placeholder="输入沉香物品名称…" maxlength="20" onkeydown="if(event.key==='Enter')addCustomItem()">
+      <button onclick="addCustomItem()">＋ 添加</button>
+    </div>
+  `;
+  if (APP_DATA.customItems.length === 0) {
+    return addForm + `<div class="empty"><div class="icon">🪵</div><p>暂无沉香物品<br>输入名称后点击"添加"</p></div>`;
+  }
+  return addForm + items;
+}
+
+function renderItemCard(itemId, info, isCustom) {
+  const qty = APP_DATA.stock[itemId] || 0;
+  const cls = qty < 0 ? 'neg' : (qty === 0 ? 'zero' : '');
+  const displayName = getItemDisplayName(info);
+  const deleteBtn = isCustom
+    ? `<button class="btn-del" onclick="event.stopPropagation();deleteCustomItem('${itemId}')" title="删除">✕</button>`
+    : '';
+  return `
+    <div class="item-card ${info.colorClass || ''}">
+      <div class="item-info">
+        <div class="name">${displayName}</div>
+      </div>
+      <div class="stock-num ${cls}">${qty}</div>
+      <div class="item-actions">
+        <button class="btn-in" onclick="openModal('${itemId}','in')" title="入库">+</button>
+        <button class="btn-out" onclick="openModal('${itemId}','out')" title="出库">−</button>
+        ${deleteBtn}
+      </div>
+    </div>
+  `;
+}
+
+function renderHistoryTab() {
+  if (APP_DATA.history.length === 0) {
+    return `<div class="empty"><div class="icon">📋</div><p>暂无操作记录</p></div>`;
+  }
+  // 按日期分组，最新在前
+  const sorted = [...APP_DATA.history].sort((a,b) => b.date.localeCompare(a.date));
+  const groups = {};
+  sorted.forEach(h => {
+    const day = h.date.split('T')[0];
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(h);
+  });
+  return Object.entries(groups).map(([day, items]) => {
+    const today = new Date().toISOString().split('T')[0];
+    const label = day === today ? '今天' : day;
+    return `<div class="date-divider">${label}</div>` +
+      items.map(h => `
+        <div class="history-item">
+          <div class="h-icon ${h.type}">${h.type==='in'?'📥':'📤'}</div>
+          <div class="h-info">
+            <div class="h-name">${h.itemName}</div>
+            <div class="h-time">${formatTime(h.date)}</div>
+          </div>
+          <div class="h-amount ${h.type}">${h.type==='in'?'+':'-'}${h.amount}</div>
+        </div>
+      `).join('');
+  }).join('');
+}
+
+function formatTime(iso) {
+  try {
+    const d = new Date(iso);
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  } catch(e) { return ''; }
+}
+
+// ==================== ACTIONS ====================
+function openModal(itemId, type) {
+  const info = getItemInfo(itemId);
+  if (!info) return;
+  modalState = { itemId, type, displayName: getItemDisplayName(info) };
+  document.getElementById('modalTitle').textContent = modalState.displayName;
+  const badge = document.getElementById('modalBadge');
+  badge.textContent = type === 'in' ? '入库' : '出库';
+  badge.className = 'm-type-badge ' + (type === 'in' ? 'badge-in' : 'badge-out');
+  document.getElementById('modalInput').value = '0';
+  document.getElementById('modalConfirm').className = 'btn-confirm ' + type;
+  document.getElementById('modalConfirm').textContent = type==='in'?'确认入库':'确认出库';
+  document.getElementById('modal').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('modalInput').focus();
+    document.getElementById('modalInput').select();
+  }, 300);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  modalState = null;
+}
+
+function addQuick(n) {
+  const input = document.getElementById('modalInput');
+  input.value = Math.max(0, parseInt(input.value) || 0) + n;
+  input.focus();
+}
+
+function confirmModal() {
+  if (!modalState) return;
+  const amount = parseInt(document.getElementById('modalInput').value) || 0;
+  if (amount <= 0) { toast('请输入有效数量'); return; }
+
+  const { itemId, type, displayName } = modalState;
+  const current = APP_DATA.stock[itemId] || 0;
+
+  if (type === 'in') {
+    APP_DATA.stock[itemId] = current + amount;
+  } else {
+    APP_DATA.stock[itemId] = current - amount;
+  }
+
+  APP_DATA.history.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    itemId,
+    itemName: displayName,
+    type,
+    amount,
+    date: new Date().toISOString()
+  });
+
+  // 保留最近 500 条记录
+  if (APP_DATA.history.length > 500) {
+    APP_DATA.history = APP_DATA.history.slice(-500);
+  }
+
+  saveData(APP_DATA);
+  closeModal();
+  renderContent();
+  toast((type==='in'?'📥 入库 ':'📤 出库 ') + displayName + ' × ' + amount);
+}
+
+function addCustomItem() {
+  const input = document.getElementById('customNameInput');
+  const name = (input?.value || '').trim();
+  if (!name) { toast('请输入物品名称'); input?.focus(); return; }
+
+  const id = 'custom-' + Date.now().toString(36);
+  APP_DATA.customItems.push({ id, name });
+  APP_DATA.stock[id] = 0;
+  saveData(APP_DATA);
+  renderContent();
+  if (input) input.value = '';
+  toast('✅ 已添加：' + name);
+}
+
+function deleteCustomItem(id) {
+  const item = APP_DATA.customItems.find(c => c.id === id);
+  if (!item) return;
+  if (!confirm('确定删除「' + item.name + '」吗？\n该物品的库存和记录将同时清除。')) return;
+
+  APP_DATA.customItems = APP_DATA.customItems.filter(c => c.id !== id);
+  delete APP_DATA.stock[id];
+  APP_DATA.history = APP_DATA.history.filter(h => h.itemId !== id);
+  saveData(APP_DATA);
+  renderContent();
+  toast('已删除：' + item.name);
+}
+
+// ==================== RESET ====================
+function showResetDialog() {
+  document.getElementById('dialog').classList.add('show');
+}
+function closeDialog() {
+  document.getElementById('dialog').classList.remove('show');
+}
+function confirmReset() {
+  APP_DATA = getDefaultData();
+  saveData(APP_DATA);
+  closeDialog();
+  renderContent();
+  toast('🔄 新周期已开始，所有数据已重置');
+}
+
+// ==================== TOAST ====================
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ==================== TABS ====================
+document.getElementById('tabNav').addEventListener('click', function(e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  currentTab = btn.dataset.tab;
+  this.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderContent();
+});
+
+// ==================== MODAL BACKDROP ====================
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ==================== PWA INIT ====================
+(function initPWA() {
+  // 生成图标并更新 manifest
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 192; canvas.height = 192;
+    const ctx = canvas.getContext('2d');
+    // 背景
+    ctx.fillStyle = '#8B3A3A';
+    ctx.beginPath(); ctx.roundRect(0,0,192,192,36); ctx.fill();
+    // 图标简笔画 — 盒子
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(48,72,96,64);
+    ctx.fillRect(82,40,28,32);
+    ctx.fillStyle = '#DAA520';
+    ctx.fillRect(88,78,16,8);
+    const iconURL = canvas.toDataURL('image/png');
+
+    // 更新 manifest 为包含图标的版本
+    const manifest = {
+      name: '我的仓库',
+      short_name: '我的仓库',
+      start_url: '.',
+      display: 'standalone',
+      background_color: '#F5F0EB',
+      theme_color: '#8B3A3A',
+      icons: [{ src: iconURL, sizes: '192x192', type: 'image/png' }]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    document.getElementById('manifest').href = URL.createObjectURL(blob);
+  } catch(e) { /* 降级：使用无图标 manifest */ }
+
+  // Service Worker 注册（仅 HTTPS / localhost）
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    const swCode = `
+      const CACHE = 'warehouse-v1';
+      self.addEventListener('install', e => {
+        e.waitUntil(caches.open(CACHE).then(c => c.addAll(['.'])));
+        self.skipWaiting();
+      });
+      self.addEventListener('fetch', e => {
+        e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+      });
+    `;
+    const swBlob = new Blob([swCode], {type:'application/javascript'});
+    const swURL = URL.createObjectURL(swBlob);
+    // Blob URL 不能用于 SW，尝试用页面自身作为 SW scope
+    // 作为单文件应用，在不支持时静默跳过
+    console.log('PWA: 部署到 HTTPS 服务器后可使用完整离线缓存');
+  }
+})();
+
+// ==================== STARTUP ====================
+renderContent();
+
+// 防止意外的页面刷新/关闭丢失数据（仅在表单输入时提醒）
+window.addEventListener('beforeunload', function(e) {
+  if (modalState) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+console.log('📦 我的仓库 — 已就绪');
+console.log('   物品数:', PRESET_ITEMS.length + APP_DATA.customItems.length);
+console.log('   总库存:', Object.values(APP_DATA.stock).reduce((a,b)=>a+b,0));
+console.log('   上次重置:', APP_DATA.lastReset ? new Date(APP_DATA.lastReset).toLocaleString('zh-CN') : '从未');
+</script>
+</body>
+</html>

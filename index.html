@@ -168,7 +168,7 @@ main:empty::after{content:'加载中…';display:block;text-align:center;padding
 .modal-overlay.show{opacity:1;pointer-events:auto}
 .modal-sheet{
   width:100%;max-width:480px;background:#FFF;border-radius:20px 20px 0 0;
-  padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));
+  padding:16px 14px;padding-bottom:max(16px,env(safe-area-inset-bottom));
   transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
 }
 .modal-overlay.show .modal-sheet{transform:translateY(0)}
@@ -180,25 +180,25 @@ main:empty::after{content:'加载中…';display:block;text-align:center;padding
 .badge-in{background:#E8F5E9;color:#388E3C}
 .badge-out{background:#FFEBEE;color:#D32F2F}
 
-.quick-btns{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.quick-btns{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
 .quick-btns button{
-  padding:8px 16px;border-radius:20px;border:1px solid #E0D5C9;
-  background:#FFF;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+  padding:6px 14px;border-radius:18px;border:1px solid #E0D5C9;
+  background:#FFF;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
   color:#5D4E37;transition:all .15s;
 }
 .quick-btns button:active{background:#F5F0EB;border-color:#8B3A3A}
 
-.input-row{display:flex;gap:10px;align-items:center}
+.input-row{display:flex;gap:8px;align-items:center}
 .input-row input{
-  flex:1;padding:14px;border:2px solid #E0D5C9;border-radius:12px;
-  font-size:24px;text-align:center;font-weight:700;font-family:inherit;
-  outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;
+  flex:1;padding:12px 8px;border:2px solid #E0D5C9;border-radius:12px;
+  font-size:20px;text-align:center;font-weight:700;font-family:inherit;
+  outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;min-width:0;
 }
 .input-row input:focus{border-color:#8B3A3A}
 .input-row .btn-confirm{
-  padding:14px 24px;border:none;border-radius:12px;font-size:16px;
+  padding:12px 18px;border:none;border-radius:12px;font-size:16px;
   font-weight:700;color:#FFF;cursor:pointer;font-family:inherit;white-space:nowrap;
-  transition:opacity .2s;
+  transition:opacity .2s;flex-shrink:0;
 }
 .btn-confirm.in{background:#43A047}
 .btn-confirm.out{background:#E53935}
@@ -272,6 +272,7 @@ main:empty::after{content:'加载中…';display:block;text-align:center;padding
     <div class="m-sub"><span class="m-type-badge" id="modalBadge"></span></div>
     <div class="quick-btns">
       <button onclick="addQuick(1)">+1</button>
+      <button onclick="addQuick(3)">+3</button>
       <button onclick="addQuick(5)">+5</button>
       <button onclick="addQuick(10)">+10</button>
     </div>
@@ -513,7 +514,7 @@ function openModal(itemId, type) {
   badge.className = 'm-type-badge ' + (type === 'in' ? 'badge-in' : 'badge-out');
   document.getElementById('modalInput').value = '0';
   document.getElementById('modalConfirm').className = 'btn-confirm ' + type;
-  document.getElementById('modalConfirm').textContent = type==='in'?'确认入库':'确认出库';
+  document.getElementById('modalConfirm').textContent = '确认';
   document.getElementById('modal').classList.add('show');
   setTimeout(() => {
     document.getElementById('modalInput').focus();
@@ -635,54 +636,37 @@ document.getElementById('modal').addEventListener('click', function(e) {
 
 // ==================== PWA INIT ====================
 (function initPWA() {
-  // 生成图标并更新 manifest
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 192; canvas.height = 192;
-    const ctx = canvas.getContext('2d');
-    // 背景
-    ctx.fillStyle = '#8B3A3A';
-    ctx.beginPath(); ctx.roundRect(0,0,192,192,36); ctx.fill();
-    // 图标简笔画 — 盒子
-    ctx.fillStyle = '#FFF';
-    ctx.fillRect(48,72,96,64);
-    ctx.fillRect(82,40,28,32);
-    ctx.fillStyle = '#DAA520';
-    ctx.fillRect(88,78,16,8);
-    const iconURL = canvas.toDataURL('image/png');
+  // 生成图标
+  const canvas = document.createElement('canvas');
+  canvas.width = 192; canvas.height = 192;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#8B3A3A';
+  ctx.beginPath(); ctx.roundRect(0,0,192,192,36); ctx.fill();
+  ctx.fillStyle = '#FFF';
+  ctx.fillRect(48,72,96,64);
+  ctx.fillRect(82,40,28,32);
+  ctx.fillStyle = '#DAA520';
+  ctx.fillRect(88,78,16,8);
+  const iconURL = canvas.toDataURL('image/png');
 
-    // 更新 manifest 为包含图标的版本
-    const manifest = {
-      name: '我的仓库',
-      short_name: '我的仓库',
-      start_url: '.',
-      display: 'standalone',
-      background_color: '#F5F0EB',
-      theme_color: '#8B3A3A',
-      icons: [{ src: iconURL, sizes: '192x192', type: 'image/png' }]
-    };
-    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-    document.getElementById('manifest').href = URL.createObjectURL(blob);
-  } catch(e) { /* 降级：使用无图标 manifest */ }
-
-  // Service Worker 注册（仅 HTTPS / localhost）
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    const swCode = `
-      const CACHE = 'warehouse-v1';
-      self.addEventListener('install', e => {
-        e.waitUntil(caches.open(CACHE).then(c => c.addAll(['.'])));
-        self.skipWaiting();
-      });
-      self.addEventListener('fetch', e => {
-        e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-      });
-    `;
-    const swBlob = new Blob([swCode], {type:'application/javascript'});
-    const swURL = URL.createObjectURL(swBlob);
-    // Blob URL 不能用于 SW，尝试用页面自身作为 SW scope
-    // 作为单文件应用，在不支持时静默跳过
-    console.log('PWA: 部署到 HTTPS 服务器后可使用完整离线缓存');
-  }
+  // 构建 manifest 并转为 base64 data URI（比 Blob URL 更可靠，PWA 安装时会读取）
+  const manifest = {
+    name: '我的仓库',
+    short_name: '仓库',
+    start_url: './',
+    scope: './',
+    display: 'standalone',
+    background_color: '#F5F0EB',
+    theme_color: '#8B3A3A',
+    icons: [{ src: iconURL, sizes: '192x192', type: 'image/png', purpose: 'any maskable' }]
+  };
+  const json = JSON.stringify(manifest);
+  // 使用 TextEncoder 正确处理中文 → base64
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  document.getElementById('manifest').href = 'data:application/manifest+json;base64,' + btoa(binary);
+  console.log('📱 PWA manifest 已就绪');
 })();
 
 // ==================== STARTUP ====================

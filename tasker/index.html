@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0D1117">
 <meta name="description" content="任务提醒——循环督促直到完成">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%230D1117'/><text x='90' y='115' font-size='90' text-anchor='middle'>⏰</text></svg>">
-<link rel="manifest" id="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuS7u+WKoeaPkOmGuiIsCiAgInNob3J0X25hbWUiOiAi5Lu75YqhIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJzY29wZSI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMEQxMTE3IiwKICAidGhlbWVfY29sb3IiOiAiIzBEMTExNyIsCiAgImljb25zIjogW10KfQ==">
+<link rel="manifest" href="manifest.webmanifest">
 <title>任务提醒</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -815,39 +815,8 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// ==================== PWA INIT ====================
-(function initPWA() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 192; canvas.height = 192;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#0D1117';
-  ctx.beginPath(); ctx.roundRect(0,0,192,192,36); ctx.fill();
-  ctx.fillStyle = '#58A6FF';
-  ctx.beginPath(); ctx.arc(96,80,30,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#0D1117';
-  ctx.beginPath(); ctx.arc(96,80,22,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#58A6FF';
-  ctx.fillRect(92,78,8,36);
-  ctx.fillRect(78,76,8,20);
-  ctx.fillRect(106,76,8,20);
-  const iconURL = canvas.toDataURL('image/png');
-
-  const manifest = {
-    name: '任务提醒',
-    short_name: '任务',
-    start_url: './',
-    scope: './',
-    display: 'standalone',
-    background_color: '#0D1117',
-    theme_color: '#0D1117',
-    icons: [{ src: iconURL, sizes: '192x192', type: 'image/png', purpose: 'any maskable' }]
-  };
-  const bytes = new TextEncoder().encode(JSON.stringify(manifest));
-  let binary = '';
-  bytes.forEach(b => binary += String.fromCharCode(b));
-  document.getElementById('manifest').href = 'data:application/manifest+json;base64,' + btoa(binary);
-  console.log('⏰ 任务提醒 PWA 已就绪');
-})();
+// ==================== PWA ====================
+// 使用静态 manifest.webmanifest（PWABuilder 兼容）
 
 // ==================== STARTUP ====================
 renderContent();

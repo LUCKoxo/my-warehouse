@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - name: Generate keystore
+        run: |
+          keytool -genkey -v -keystore keystore.jks -alias tasker \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=Personal, OU=Personal, O=Personal, L=Unknown, ST=Unknown, C=CN"
+
+      - name: Init Bubblewrap project
+        run: |
+          npx @bubblewrap/cli@latest init \
+            --manifest "https://luckoxo.github.io/my-warehouse/tasker/manifest.json" \
+            --directory ./twa \
+            --package-id com.luckoxo.tasker
+
+      - name: Build APK
+        run: |
+          cd twa
+          npx @bubblewrap/cli@latest build
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasker-apk
+          path: |
+            twa/app/build/outputs/apk/release/*.apk
+            twa/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
